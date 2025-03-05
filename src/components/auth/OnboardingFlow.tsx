@@ -46,7 +46,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 }) => {
   const [step, setStep] = useState(initialStep);
   const navigate = useNavigate();
-  const totalSteps = 4;
+  const totalSteps = 5; // Updated to include hair type and diet quality
 
   // Form schemas for each step
   const personalInfoSchema = z.object({
@@ -54,6 +54,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     age: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: "Please enter a valid age",
     }),
+  });
+
+  const hairDietSchema = z.object({
+    hairType: z.string().min(1, { message: "Please select your hair type" }),
+    dietQuality: z
+      .string()
+      .min(1, { message: "Please rate your diet quality" }),
   });
 
   const beautyGoalsSchema = z.object({
@@ -93,6 +100,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     },
   });
 
+  const hairDietForm = useForm<z.infer<typeof hairDietSchema>>({
+    resolver: zodResolver(hairDietSchema),
+    defaultValues: {
+      hairType: "",
+      dietQuality: "",
+    },
+  });
+
   const beautyGoalsForm = useForm<z.infer<typeof beautyGoalsSchema>>({
     resolver: zodResolver(beautyGoalsSchema),
     defaultValues: {
@@ -122,6 +137,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     if (step < totalSteps - 1) {
       setStep(step + 1);
     } else {
+      // Save user preferences to localStorage for the dashboard to use
+      const userPreferences = {
+        hairType: hairDietForm.getValues().hairType,
+        dietQuality: hairDietForm.getValues().dietQuality,
+        skinType: "combination", // Default value
+        fitnessLevel: wellnessGoalsForm.getValues().fitnessLevel,
+      };
+      localStorage.setItem("userPreferences", JSON.stringify(userPreferences));
+
       onComplete();
       navigate("/dashboard");
     }
@@ -135,6 +159,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const onSubmitPersonalInfo = (data: z.infer<typeof personalInfoSchema>) => {
     console.log("Personal info:", data);
+    handleNext();
+  };
+
+  const onSubmitHairDiet = (data: z.infer<typeof hairDietSchema>) => {
+    console.log("Hair and diet info:", data);
     handleNext();
   };
 
@@ -211,6 +240,105 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </Form>
         );
       case 1:
+        return (
+          <Form {...hairDietForm}>
+            <form
+              onSubmit={hairDietForm.handleSubmit(onSubmitHairDiet)}
+              className="space-y-6"
+            >
+              <FormField
+                control={hairDietForm.control}
+                name="hairType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700">
+                      Your Hair Type
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="border-purple-200 focus:ring-purple-300">
+                          <SelectValue placeholder="Select your hair type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="straight">Straight</SelectItem>
+                        <SelectItem value="wavy">Wavy</SelectItem>
+                        <SelectItem value="curly">Curly</SelectItem>
+                        <SelectItem value="coily">Coily</SelectItem>
+                        <SelectItem value="fine">Fine</SelectItem>
+                        <SelectItem value="thick">Thick</SelectItem>
+                        <SelectItem value="dry">Dry</SelectItem>
+                        <SelectItem value="oily">Oily</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-pink-500" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={hairDietForm.control}
+                name="dietQuality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-purple-700">
+                      How would you rate your diet?
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="border-purple-200 focus:ring-purple-300">
+                          <SelectValue placeholder="Select diet quality" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="excellent">
+                          Excellent - Very balanced and nutritious
+                        </SelectItem>
+                        <SelectItem value="good">
+                          Good - Mostly healthy with occasional treats
+                        </SelectItem>
+                        <SelectItem value="average">
+                          Average - Mix of healthy and unhealthy foods
+                        </SelectItem>
+                        <SelectItem value="needsImprovement">
+                          Needs Improvement - Often eat processed foods
+                        </SelectItem>
+                        <SelectItem value="poor">
+                          Poor - Mostly fast food and processed items
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-pink-500" />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-between pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBack}
+                  className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                >
+                  Next
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </Form>
+        );
+      case 2:
         return (
           <Form {...beautyGoalsForm}>
             <form
@@ -346,7 +474,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </form>
           </Form>
         );
-      case 2:
+      case 3:
         return (
           <Form {...wellnessGoalsForm}>
             <form
@@ -488,7 +616,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </form>
           </Form>
         );
-      case 3:
+      case 4:
         return (
           <Form {...preferencesForm}>
             <form

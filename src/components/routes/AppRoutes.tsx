@@ -10,11 +10,13 @@ import VirtualStylist from "../ai/VirtualStylist";
 import PeriodTracker from "../tracking/PeriodTracker";
 import HabitTracker from "../habits/HabitTracker";
 import DailyRoutineBuilder from "../routines/DailyRoutineBuilder";
+import LandingPage from "../../pages/LandingPage";
 
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginForm />} />
       <Route path="/signup" element={<LoginForm />} />
       <Route path="/onboarding" element={<OnboardingFlow />} />
@@ -82,9 +84,6 @@ const AppRoutes: React.FC = () => {
           </AuthLayout>
         }
       />
-
-      {/* Redirect root to dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />
